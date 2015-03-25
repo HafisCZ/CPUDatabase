@@ -107,7 +107,6 @@ public class core extends JPanel {
 				cpu_table.getColumnModel().getColumn(1).setCellRenderer(cpu_table.getDefaultRenderer(ImageIcon.class));
 				cpu_table.setPreferredScrollableViewportSize(new Dimension(500, 220));
 				cpu_table.setFillsViewportHeight(true);
-				cpu_table.getColumnModel().getColumn(0).setPreferredWidth(1);
 				cpu_table.addMouseListener(new java.awt.event.MouseAdapter() {
 					public void mouseClicked(java.awt.event.MouseEvent e) {
 						update();
@@ -159,16 +158,19 @@ public class core extends JPanel {
 						public void actionPerformed(ActionEvent arg0) {
 							try {
 								if (isAnyCellSelected(cpu_table)) {
-									String whole = new String(Files.readAllBytes(Paths.get(datafile)));
-									int selected = cpu_table.getSelectedRow();
-									whole = whole.replace(cpu_database[selected][0] + "^" + cpu_database[selected][1] + "^"
-											+ cpu_database[selected][2] + "^" + cpu_database[selected][3], "");
-									if (whole.contains("||")) whole = whole.replace("||", "|");
-									BufferedWriter w = new BufferedWriter(new FileWriter(datafile));
-									w.write(whole);
-									w.close();
-									updateTable(datafile);
-									update();
+									if (JOptionPane.showConfirmDialog(null, "Opravdu chcete odebrat tento prvek ?", "Odebrat prvek",
+											JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.OK_OPTION) {
+										String whole = new String(Files.readAllBytes(Paths.get(datafile)));
+										int selected = cpu_table.getSelectedRow();
+										whole = whole.replace(cpu_database[selected][0] + "^" + cpu_database[selected][1] + "^"
+												+ cpu_database[selected][2] + "^" + cpu_database[selected][3], "");
+										if (whole.contains("||")) whole = whole.replace("||", "|");
+										BufferedWriter w = new BufferedWriter(new FileWriter(datafile));
+										w.write(whole);
+										w.close();
+										updateTable(datafile);
+										update();
+									}
 								}
 							} catch (Exception e) {
 								e.printStackTrace();
@@ -335,7 +337,7 @@ public class core extends JPanel {
 		dm.fireTableDataChanged();
 		cpu_database = readFromFile(file);
 		cpu_table.setModel(new DefaultTableModel(cpu_database, table_columns));
-		cpu_table.getColumnModel().getColumn(0).setPreferredWidth(1);
+		cpu_table.getColumnModel().getColumn(0).setPreferredWidth(80);
 		cpu_table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
 			private static final long serialVersionUID = 1L;
 
@@ -357,6 +359,18 @@ public class core extends JPanel {
 				} else {
 					setText(value != null ? value.toString() : "<null>");
 				}
+
+				// if (column == 1 && new File(value.toString()).exists()) {
+				// try {
+				// BufferedImage pic = ImageIO.read(new File(value.toString()));
+				// setIcon(new ImageIcon(pic));
+				// } catch (IOException e) {
+				// e.printStackTrace();
+				// }
+				// } else {
+				// setIcon(null);
+				// }
+
 				return this;
 			}
 		});
