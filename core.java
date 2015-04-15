@@ -8,6 +8,8 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -20,6 +22,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Iterator;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -27,20 +31,21 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.EtchedBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+
+import entry.EntryProcessor;
 
 public class core extends JPanel {
 
@@ -55,7 +60,9 @@ public class core extends JPanel {
 	public static JTextField search_bar;
 	public static JButton search_go;
 
-	public static JTable cpu_table;
+	public static JTable cpu_tableA;
+	public static JTable cpu_tableB;
+	public static JTable cpu_tableC;
 	public static JButton add_entry;
 	public static JButton remove_entry;
 	public static JButton refresh_entry;
@@ -64,58 +71,115 @@ public class core extends JPanel {
 
 	public static JComboBox<String> cpu_combobox;
 
+	public static JTabbedPane cpu_owner_sort;
+
 	public static JButton ph_open;
 	public static JButton ph_set;
 
-	public static JPanel table_panel;
+	public static JPanel table_panelA;
+	public static JPanel table_panelB;
+	public static JPanel table_panelC;
 	public static JPanel button_panel;
 	public static JPanel main_panel;
 	public static JPanel search_panel;
 	public static Object[][] cpu_database = {};
-	public static String[] table_columns = { "Procesor", "Fotografie", "Atributy", "Stav" };
+	public static String[] table_columns = { "Výrobce", "Socket", "Procesor", "Fotografie", "Atributy", "Stav" };
 	public static String[] cpu_status = { "Nevlastnìno", "Vlastnìno" };
 
-	public static final String datafile = "data.db";
+	public static String wantedMan = null;
+	public static String wantedSoc = null;
 
-	// Listeners
-	public static DocumentListener changeListener = new DocumentListener() {
-		public void changedUpdate(DocumentEvent e) {
-			update();
-		}
+	public JPanel global_panel;
 
-		public void removeUpdate(DocumentEvent e) {
-			update();
-		}
+	public static String datafile = "";
 
-		public void insertUpdate(DocumentEvent e) {
-			update();
-		}
+	public static enum UPDATE {
+		LOW, MEDIUM, HIGH
 	};
 
-	public core() {
+	public void execute(String path) {
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		JFrame frame = new JFrame("CPU-D | CC-BY-NC-ND by mar21 | BETA 6");
+		// Frame.setIconImage(Toolkit.getDefaultToolkit().getImage(Start.class.getClass().getResource("/icon16.png")));
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setResizable(false);
+		core Content = new core(path);
+		Content.setOpaque(true);
+		frame.setContentPane(Content);
+		frame.pack();
+		frame.setVisible(true);
+
+	}
+
+	public core(String path) {
+		core.datafile = path;
 		this.setFocusable(false);
 		this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 		main_panel = new JPanel();
 		main_panel.setLayout(new FlowLayout());
 		{
-			table_panel = new JPanel();
-			table_panel.setLayout(new FlowLayout());
-			table_panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Seznam"));
+
+			table_panelA = new JPanel();
+			table_panelA.setLayout(new FlowLayout());
+			table_panelA.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Seznam"));
 			{
-				cpu_table = new JTable();
-				cpu_table.setModel(new DefaultTableModel(cpu_database, table_columns));
-				cpu_table.getColumnModel().getColumn(1).setCellRenderer(cpu_table.getDefaultRenderer(ImageIcon.class));
-				cpu_table.setPreferredScrollableViewportSize(new Dimension(500, 220));
-				cpu_table.setFillsViewportHeight(true);
-				cpu_table.addMouseListener(new java.awt.event.MouseAdapter() {
+				cpu_tableA = new JTable();
+				cpu_tableA.setModel(new DefaultTableModel(cpu_database, table_columns));
+				cpu_tableA.setPreferredScrollableViewportSize(new Dimension(500, 220));
+				cpu_tableA.setFillsViewportHeight(true);
+				cpu_tableA.addMouseListener(new java.awt.event.MouseAdapter() {
 					public void mouseClicked(java.awt.event.MouseEvent e) {
-						update();
+						fireUpdate(cpu_tableA, UPDATE.LOW, datafile);
 					}
 				});
-				JScrollPane slr = new JScrollPane(cpu_table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-				table_panel.add(slr);
+
+				JScrollPane slr = new JScrollPane(cpu_tableA, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+				table_panelA.add(slr);
 			}
-			main_panel.add(table_panel);
+
+			table_panelB = new JPanel();
+			table_panelB.setLayout(new FlowLayout());
+			table_panelB.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Seznam"));
+			{
+				cpu_tableB = new JTable();
+				cpu_tableB.setModel(new DefaultTableModel(cpu_database, table_columns));
+				cpu_tableB.setPreferredScrollableViewportSize(new Dimension(500, 220));
+				cpu_tableB.setFillsViewportHeight(true);
+				cpu_tableB.addMouseListener(new java.awt.event.MouseAdapter() {
+					public void mouseClicked(java.awt.event.MouseEvent e) {
+						fireUpdate(cpu_tableB, UPDATE.LOW, datafile);
+					}
+				});
+				JScrollPane slr = new JScrollPane(cpu_tableB, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+				table_panelB.add(slr);
+			}
+
+			table_panelC = new JPanel();
+			table_panelC.setLayout(new FlowLayout());
+			table_panelC.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Seznam"));
+			{
+				cpu_tableC = new JTable();
+				cpu_tableC.setModel(new DefaultTableModel(cpu_database, table_columns));
+				cpu_tableC.setPreferredScrollableViewportSize(new Dimension(500, 220));
+				cpu_tableC.setFillsViewportHeight(true);
+				cpu_tableC.addMouseListener(new java.awt.event.MouseAdapter() {
+					public void mouseClicked(java.awt.event.MouseEvent e) {
+						fireUpdate(cpu_tableC, UPDATE.LOW, datafile);
+					}
+				});
+				JScrollPane slr = new JScrollPane(cpu_tableC, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+				table_panelC.add(slr);
+			}
+
+			cpu_owner_sort = new JTabbedPane();
+			cpu_owner_sort.addTab("Všechny", table_panelA);
+			cpu_owner_sort.addTab(cpu_status[1], table_panelB);
+			cpu_owner_sort.addTab(cpu_status[0], table_panelC);
+			main_panel.add(cpu_owner_sort);
 
 			button_panel = new JPanel();
 			button_panel.setLayout(new BoxLayout(button_panel, BoxLayout.PAGE_AXIS));
@@ -129,17 +193,13 @@ public class core extends JPanel {
 					add_entry.addActionListener(new ActionListener() {
 						public void actionPerformed(ActionEvent arg0) {
 							try {
-								String entry = createEntry();
-								if (entry != null) {
-									BufferedWriter out = new BufferedWriter(new FileWriter(datafile, true));
-									out.write("|" + entry + "^-^-^0");
-									out.close();
-									updateTable(datafile);
-									update();
-								}
-							} catch (IOException e) {
-								e.printStackTrace();
+								EntryProcessor eP = new EntryProcessor(datafile).readEntries();
+								addNewEntry(eP);
+								fireUpdate(cpu_tableA, UPDATE.HIGH, datafile);
+							} catch (Exception f) {
+								f.printStackTrace();
 							}
+
 						}
 					});
 					top_panel.add(add_entry);
@@ -147,8 +207,7 @@ public class core extends JPanel {
 					refresh_entry.setFont(getFont().deriveFont(15.0f));
 					refresh_entry.addActionListener(new ActionListener() {
 						public void actionPerformed(ActionEvent arg0) {
-							updateTable(datafile);
-							update();
+							fireUpdate(cpu_tableA, UPDATE.HIGH, datafile);
 						}
 					});
 					top_panel.add(refresh_entry);
@@ -157,19 +216,20 @@ public class core extends JPanel {
 					remove_entry.addActionListener(new ActionListener() {
 						public void actionPerformed(ActionEvent arg0) {
 							try {
-								if (isAnyCellSelected(cpu_table)) {
-									if (JOptionPane.showConfirmDialog(null, "Opravdu chcete odebrat tento prvek ?", "Odebrat prvek",
-											JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.OK_OPTION) {
-										String whole = new String(Files.readAllBytes(Paths.get(datafile)));
-										int selected = cpu_table.getSelectedRow();
-										whole = whole.replace(cpu_database[selected][0] + "^" + cpu_database[selected][1] + "^"
-												+ cpu_database[selected][2] + "^" + cpu_database[selected][3], "");
-										if (whole.contains("||")) whole = whole.replace("||", "|");
-										BufferedWriter w = new BufferedWriter(new FileWriter(datafile));
-										w.write(whole);
-										w.close();
-										updateTable(datafile);
-										update();
+								if (isAnyCellSelected(cpu_tableA)) {
+									if (JOptionPane.showConfirmDialog(null, "Opravdu chcete odebrat tento prvek ?", "Odebrat prvek", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.OK_OPTION) {
+										int selected = cpu_tableA.getSelectedRow();
+										EntryProcessor eP = new EntryProcessor(datafile);
+										Object[] rt = cpu_database[selected];
+										String remove = rt[0] + "^";
+										remove += rt[1] + "^";
+										remove += rt[2] + "^";
+										remove += rt[3] + "^";
+										remove += rt[4] + "^";
+										remove += rt[5];
+										eP.readEntries().removeEntry(remove, false);
+										eP.saveFile();
+										fireUpdate(cpu_tableA, UPDATE.HIGH, datafile);
 									}
 								}
 							} catch (Exception e) {
@@ -190,19 +250,12 @@ public class core extends JPanel {
 					manage_atts.addActionListener(new ActionListener() {
 						public void actionPerformed(ActionEvent arg0) {
 							try {
-								String atts = modifyAttributes();
+								String atts = showInputDialog(null, "Atributy: ", "Modifikovat atributy", cpu_database[cpu_tableA.getSelectedRow()][4].toString(), 30, false);
 								if (atts != "" && atts != null) {
-									String whole = new String(Files.readAllBytes(Paths.get(datafile)));
-									int selected = cpu_table.getSelectedRow();
+									int selected = cpu_tableA.getSelectedRow();
 									if (cpu_database[selected][2].toString() != atts) {
-										whole = whole.replace(cpu_database[selected][0] + "^" + cpu_database[selected][1] + "^"
-												+ cpu_database[selected][2] + "^" + cpu_database[selected][3], cpu_database[selected][0] + "^"
-												+ cpu_database[selected][1] + "^" + atts + "^" + cpu_database[selected][3]);
-										if (whole.contains("||")) whole = whole.replace("||", "|");
-										BufferedWriter w = new BufferedWriter(new FileWriter(datafile));
-										w.write(whole);
-										w.close();
-										updateTable(datafile);
+										// TODO att manager
+										fireUpdate(cpu_tableA, UPDATE.HIGH, datafile);
 									}
 								}
 
@@ -225,18 +278,11 @@ public class core extends JPanel {
 					cpu_combobox.addItemListener(new ItemListener() {
 						public void itemStateChanged(ItemEvent event) {
 							try {
-								if (isAnyCellSelected(cpu_table)) {
-									String whole = new String(Files.readAllBytes(Paths.get(datafile)));
-									int selected = cpu_table.getSelectedRow();
-									if (Integer.parseInt(cpu_database[selected][3].toString()) != cpu_combobox.getSelectedIndex()) {
-										whole = whole.replace(cpu_database[selected][0] + "^" + cpu_database[selected][1] + "^"
-												+ cpu_database[selected][2] + "^" + cpu_database[selected][3], cpu_database[selected][0] + "^"
-												+ cpu_database[selected][1] + "^" + cpu_database[selected][2] + "^" + cpu_combobox.getSelectedIndex());
-										if (whole.contains("||")) whole = whole.replace("||", "|");
-										BufferedWriter w = new BufferedWriter(new FileWriter(datafile));
-										w.write(whole);
-										w.close();
-										updateTable(datafile);
+								if (isAnyCellSelected(cpu_tableA)) {
+									int selected = cpu_tableA.getSelectedRow();
+									if (Integer.parseInt(cpu_database[selected][5].toString()) != cpu_combobox.getSelectedIndex()) {
+										// TODO combobox
+										fireUpdate(cpu_tableA, UPDATE.HIGH, datafile);
 									}
 								}
 							} catch (Exception e) {
@@ -265,20 +311,12 @@ public class core extends JPanel {
 					ph_set.addActionListener(new ActionListener() {
 						public void actionPerformed(ActionEvent arg0) {
 							try {
-								String entry = createEntryLink();
+								String entry = showInputDialog(null, "Cesta: ", "Pøidat fotografii", cpu_database[cpu_tableA.getSelectedRow()][3].toString(), 20, true);
 								if (entry != "" && entry != null) {
-									String whole = new String(Files.readAllBytes(Paths.get(datafile)));
-									int selected = cpu_table.getSelectedRow();
+									int selected = cpu_tableA.getSelectedRow();
 									if (cpu_database[selected][1].toString() != entry) {
-										whole = whole.replace(cpu_database[selected][0] + "^" + cpu_database[selected][1] + "^"
-												+ cpu_database[selected][2] + "^" + cpu_database[selected][3], cpu_database[selected][0] + "^"
-												+ entry + "^" + cpu_database[selected][2] + "^" + cpu_database[selected][3]);
-										if (whole.contains("||")) whole = whole.replace("||", "|");
-										BufferedWriter w = new BufferedWriter(new FileWriter(datafile));
-										w.write(whole);
-										w.close();
-										updateTable(datafile);
-										update();
+										// TODO photo set
+										fireUpdate(cpu_tableA, UPDATE.HIGH, datafile);
 									}
 								}
 							} catch (Exception e) {
@@ -310,136 +348,28 @@ public class core extends JPanel {
 				public void actionPerformed(ActionEvent arg0) {
 					String phrase = search_bar.getText();
 					for (int i = 0; i < cpu_database.length; i++) {
-						if (cpu_database[i][0].toString().contains(phrase)) {
-							cpu_table.setRowSelectionInterval(i, i);
+						if (cpu_database[i][2].toString().contains(phrase)) {
+							cpu_tableA.setRowSelectionInterval(i, i);
 							break;
 						} else {
-							cpu_table.clearSelection();
+							cpu_tableA.clearSelection();
 						}
 					}
-					update();
+					fireUpdate(cpu_tableA, UPDATE.LOW, datafile);
 				}
 			});
 			search_panel.add(search_go);
 		}
 		this.add(search_panel);
-		updateTable(datafile);
-		update();
+		fireUpdate(cpu_tableA, UPDATE.HIGH, datafile);
 	}
 
 	public static void showInfo(String name, String message) {
 		JOptionPane.showMessageDialog(null, message, name, JOptionPane.PLAIN_MESSAGE);
 	}
 
-	public static void updateTable(String file) {
-		DefaultTableModel dm = (DefaultTableModel) cpu_table.getModel();
-		dm.getDataVector().removeAllElements();
-		dm.fireTableDataChanged();
-		cpu_database = readFromFile(file);
-		cpu_table.setModel(new DefaultTableModel(cpu_database, table_columns));
-		cpu_table.getColumnModel().getColumn(0).setPreferredWidth(80);
-		cpu_table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-				if (column == 3) {
-					Integer sel_val = Integer.parseInt(value.toString());
-					if (sel_val == 0) {
-						setBackground(Color.RED.darker());
-					} else {
-						setBackground(Color.GREEN.darker());
-					}
-				} else {
-					setBackground(isSelected ? javax.swing.UIManager.getColor("Table.selectionBackground") : Color.WHITE);
-				}
-				setForeground(isSelected ? Color.WHITE : Color.BLACK);
-				if (column == 3) {
-					setText(Integer.parseInt(value.toString()) == 0 ? "Nevlastnìno" : "Vlastnìno");
-				} else {
-					setText(value != null ? value.toString() : "<null>");
-				}
-
-				// if (column == 1 && new File(value.toString()).exists()) {
-				// try {
-				// BufferedImage pic = ImageIO.read(new File(value.toString()));
-				// setIcon(new ImageIcon(pic));
-				// } catch (IOException e) {
-				// e.printStackTrace();
-				// }
-				// } else {
-				// setIcon(null);
-				// }
-
-				return this;
-			}
-		});
-	}
-
-	public static void update() {// TODO update
-		if (isAnyCellSelected(cpu_table)) {
-			cpu_combobox.setEnabled(true);
-			ph_set.setEnabled(true);
-			manage_atts.setEnabled(true);
-			remove_entry.setEnabled(true);
-			int selected = cpu_table.getSelectedRow();
-			ph_open.setEnabled((new File(cpu_database[selected][1].toString()).exists()) ? true : false);
-			cpu_combobox.setSelectedIndex(Integer.parseInt(cpu_database[selected][3].toString()));
-		} else {
-			ph_open.setEnabled(false);
-			manage_atts.setEnabled(false);
-			cpu_combobox.setEnabled(false);
-			ph_set.setEnabled(false);
-			remove_entry.setEnabled(false);
-		}
-	}
-
-	public String createEntry() {
-		JPanel p = new JPanel(new FlowLayout());
-		JLabel text = new JLabel("Oznaèení: ");
-		text.setFont(getFont().deriveFont(15.0f));
-		p.add(text);
-		JTextField name = new JTextField(20);
-		name.setFont(getFont().deriveFont(15.0f));
-		p.add(name);
-
-		if (JOptionPane.showConfirmDialog(null, p, "Pøidat prvek", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION) {
-			return name.getText();
-		} else return null;
-	}
-
-	public String createEntryLink() {
-		JPanel p = new JPanel(new FlowLayout());
-		JLabel text = new JLabel("Cesta: ");
-		text.setFont(getFont().deriveFont(15.0f));
-		p.add(text);
-		JTextField name = new JTextField(20);
-		name.setFont(getFont().deriveFont(15.0f));
-		name.setText(cpu_database[cpu_table.getSelectedRow()][1].toString());
-		p.add(name);
-
-		if (JOptionPane.showConfirmDialog(null, p, "Pøidat fotografii", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION) {
-			return name.getText();
-		} else return null;
-	}
-
-	public String modifyAttributes() {
-		JPanel p = new JPanel(new FlowLayout());
-		JLabel text = new JLabel("Atributy: ");
-		text.setFont(getFont().deriveFont(15.0f));
-		p.add(text);
-		JTextField name = new JTextField(30);
-		name.setFont(getFont().deriveFont(15.0f));
-		name.setText(cpu_database[cpu_table.getSelectedRow()][2].toString());
-		p.add(name);
-
-		if (JOptionPane.showConfirmDialog(null, p, "Modifikovat atributy", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION) {
-			return name.getText();
-		} else return null;
-	}
-
 	public void showEntryImage() {
-		String path = cpu_database[cpu_table.getSelectedRow()][1].toString();
+		String path = cpu_database[cpu_tableA.getSelectedRow()][3].toString();
 		if (new File(path).exists()) {
 			try {
 				JPanel p = new JPanel(new GridLayout(1, 1));
@@ -455,53 +385,32 @@ public class core extends JPanel {
 
 	public static Object[][] readFromFile(String file) {
 		try {
-			if (new File(file).isFile()) {
-				String datas = new String(Files.readAllBytes(Paths.get(file)));
-				if (datas.contains("||")) datas = datas.replace("||", "|");
-				if (datas.charAt(0) == '|') {
-					datas = datas.substring(1);
-				}
-				String[] block_data = datas.split("\\|");
-				Object[][] raw_data = new Object[block_data.length][4];
-				for (int i = 0; i < block_data.length; i++) {
-					String[] cut_data = block_data[i].split("\\^");
-					for (int y = 0; y < 4; y++) {
-						if (y == 1 && new File(cut_data[y]).exists()) raw_data[i][y] = new ImageIcon(cut_data[y]);
-						else raw_data[i][y] = cut_data[y];
-					}
-				}
-				return raw_data;
-			}
+			EntryProcessor pc = new EntryProcessor(file).readEntries();
+			return pc.customFilter(wantedMan, wantedSoc);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return new String[][] {};
 	}
 
-	public static void main(String[] args) {
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				setupGui();
-			}
-		});
-	}
-
-	public static void setupGui() {
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-		JFrame Frame = new JFrame("CPU-D | CC-BY-NC-ND by mar21");
-		// Frame.setIconImage(Toolkit.getDefaultToolkit().getImage(Start.class.getClass().getResource("/icon16.png")));
-		Frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		Frame.setResizable(false);
-		core Content = new core();
-		Content.setOpaque(true);
-		Frame.setContentPane(Content);
-		Frame.pack();
-		Frame.setVisible(true);
-	}
+	/*
+	 * if (new File(file).isFile()) {
+	 * // clearDupes(file);
+	 * String datas = refactor(file);
+	 * String[] block_data = datas.split("\\|");
+	 * for (int i = 0; i < block_data.length; i++) {
+	 * block_data[i] = block_data[i].substring(0, 1).toUpperCase() + block_data[i].substring(1);
+	 * }
+	 * Arrays.sort(block_data);
+	 * Object[][] raw_data = new Object[block_data.length][4];
+	 * for (int i = 0; i < block_data.length; i++) {
+	 * String[] cut_data = block_data[i].split("\\^");
+	 * for (int y = 0; y < 4; y++) {
+	 * raw_data[i][y] = cut_data[y];
+	 * }
+	 * }
+	 * return raw_data;
+	 */
 
 	public static boolean isAnyCellSelected(JTable table) {
 		for (int i = 0; i < table.getModel().getRowCount(); i++) {
@@ -510,6 +419,208 @@ public class core extends JPanel {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * 
+	 * @param file Path to database file
+	 * @return Returns clean version of scanned file
+	 * @throws IOException
+	 */
+	public static String refactor(String file) throws IOException {
+		if (new File(file).exists()) {
+			String datas = new String(Files.readAllBytes(Paths.get(file)));
+			if (datas.contains("||")) datas = datas.replace("||", "|");
+			if (datas.charAt(0) == '|') datas = datas.substring(1);
+			return datas;
+		} else return null;
+	}
+
+	public void addNewEntry(EntryProcessor e) {
+
+		JPanel ps = new JPanel(new GridBagLayout());
+		GridBagConstraints c = new GridBagConstraints();
+
+		JLabel l_manufacturer = new JLabel("Vyrobce: ");
+		l_manufacturer.setFont(getFont().deriveFont(15.0f));
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 0;
+		c.gridy = 0;
+		ps.add(l_manufacturer, c);
+
+		JLabel l_socket = new JLabel("Socket: ");
+		l_socket.setFont(getFont().deriveFont(15.0f));
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 0;
+		c.gridy = 1;
+		ps.add(l_socket, c);
+
+		JLabel l_model = new JLabel("Nazev: ");
+		l_model.setFont(getFont().deriveFont(15.0f));
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 0;
+		c.gridy = 2;
+		ps.add(l_model, c);
+
+		JTextField f_manufacturer = new JTextField(30);
+		f_manufacturer.setFont(getFont().deriveFont(15.0f));
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 1;
+		c.gridy = 0;
+		ps.add(f_manufacturer, c);
+
+		JTextField f_socket = new JTextField(30);
+		f_socket.setFont(getFont().deriveFont(15.0f));
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 1;
+		c.gridy = 1;
+		ps.add(f_socket, c);
+
+		JTextField f_model = new JTextField(30);
+		f_model.setFont(getFont().deriveFont(15.0f));
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 1;
+		c.gridy = 2;
+		ps.add(f_model, c);
+
+		try {
+			if (JOptionPane.showConfirmDialog(null, ps, "Pridat prvek", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION) {
+				if (f_manufacturer.getText().equals("") || f_socket.getText().equals("") || f_model.getText().equals("")) {
+					JOptionPane.showMessageDialog(null, "Prvek nebyl pridan z duvodu chybejicich parametru !");
+				} else {
+					e.writeEntry(e.getEntryDivider() + f_manufacturer.getText() + e.getDivider() + f_socket.getText() + e.getDivider() + f_model.getText());
+					for (int i = 0; i < 3; i++) {
+						e.writeEntry(e.getDivider() + ((i == 2) ? "0" : " "));
+					}
+					e.saveFile();
+				}
+			}
+		} catch (Exception d) {
+			d.printStackTrace();
+		}
+	}
+
+	/**
+	 * 
+	 * @param c Parent (null)
+	 * @param message Message next to input JTextField
+	 * @param description Description of message
+	 * @param defaultInput Predefined input string written in input JTextField
+	 * @param fieldWidth Default width of input JTextField
+	 * @return
+	 */
+	public String showInputDialog(Component c, String message, final String description, String defaultInput, int fieldWidth, boolean chooser) {
+		JPanel p = new JPanel(new FlowLayout());
+		JLabel message_label = new JLabel(message);
+		message_label.setFont(getFont().deriveFont(15.0f));
+		final JTextField input = new JTextField(fieldWidth);
+		input.setFont(getFont().deriveFont(15.0f));
+		input.setText(defaultInput);
+		p.add(message_label);
+		p.add(input);
+		if (chooser) {
+			JButton bt = new JButton("...");
+			bt.setFont(getFont().deriveFont(15.0f));
+			bt.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent arg0) {
+					JFileChooser ch = new JFileChooser();
+					ch.setCurrentDirectory(new java.io.File("."));
+					ch.setDialogTitle(description);
+					ch.setFileSelectionMode(JFileChooser.FILES_ONLY);
+					ch.setFileHidingEnabled(false);
+					ch.setAcceptAllFileFilterUsed(false);
+					if (ch.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+						input.setText((ch.getSelectedFile()).toString());
+					}
+				}
+			});
+			p.add(bt);
+		}
+		return (JOptionPane.showConfirmDialog(c, p, description, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION) ? input.getText() : null;
+	}
+
+	/**
+	 * Update function which updates all needded JComponents with different levels of update, eg.: LOW level for JComponents without used JTable
+	 * 
+	 * @param table Used JTable
+	 * @param level Level of update from UPDATE enum
+	 * @param source Path to database file
+	 */
+	public void fireUpdate(JTable table, UPDATE level, String source) {
+
+		if (level == UPDATE.MEDIUM || level == UPDATE.HIGH) {
+
+			DefaultTableModel dm = (DefaultTableModel) table.getModel();
+			dm.getDataVector().removeAllElements();
+			dm.fireTableDataChanged();
+
+			cpu_database = readFromFile(source);
+
+			table.setModel(new DefaultTableModel(cpu_database, table_columns) {
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public boolean isCellEditable(int row, int column) {
+					return false;
+				}
+			});
+			table.getColumnModel().getColumn(0).setPreferredWidth(80);
+			table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+					setForeground(isSelected ? Color.WHITE : Color.BLACK);
+					if (column == 5) {
+						setBackground(Integer.parseInt(value.toString()) == 0 ? Color.RED.darker() : Color.GREEN.darker());
+						setText(Integer.parseInt(value.toString()) == 0 ? "Nevlastnìno" : "Vlastnìno");
+					} else {
+						setBackground(isSelected ? javax.swing.UIManager.getColor("Table.selectionBackground") : Color.WHITE);
+						setText(value != null ? value.toString() : "<null>");
+					}
+					return this;
+				}
+			});
+		}
+
+		if (level == UPDATE.LOW || level == UPDATE.HIGH) {
+			if (isAnyCellSelected(table)) {
+				int selected = table.getSelectedRow();
+				ph_set.setEnabled(true);
+				manage_atts.setEnabled(true);
+				remove_entry.setEnabled(true);
+				cpu_combobox.setEnabled(true);
+				ph_open.setEnabled((new File(cpu_database[selected][1].toString()).exists()) ? true : false);
+				cpu_combobox.setSelectedIndex(Integer.parseInt(cpu_database[selected][5].toString()));
+			} else {
+				ph_set.setEnabled(false);
+				manage_atts.setEnabled(false);
+				remove_entry.setEnabled(false);
+				ph_open.setEnabled(false);
+				cpu_combobox.setEnabled(false);
+			}
+		}
+	}
+
+	public static void clearDupes(String file) throws IOException {
+		if (new File(file).exists()) {
+			String lin_data = refactor(file);
+			String[] raw_data = lin_data.split("\\|");
+			HashSet<String> hset = new HashSet<>();
+			for (int i = 0; i < raw_data.length; i++) {
+				hset.add(raw_data[i]);
+			}
+			String[] clr_data = new String[hset.size()];
+			int i = 0;
+			for (Iterator<String> iter = hset.iterator(); iter.hasNext();) {
+				clr_data[i++] = iter.next();
+			}
+			BufferedWriter fix = new BufferedWriter(new FileWriter(file));
+			for (String s : clr_data) {
+				fix.write(s + "|");
+			}
+			fix.close();
+		}
 	}
 
 }
