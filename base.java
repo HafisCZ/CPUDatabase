@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -18,11 +17,8 @@ public class base extends JPanel {
 
 	public static JFrame frame;
 
-	public static JComboBox<String> manufacturer;
-	public static JComboBox<String> socket;
-
-	public static JButton addManufacturer;
-	public static JButton addSocketType;
+	public static JTextField manufacturer;
+	public static JTextField socket;
 
 	public static JButton execute;
 	public static JTextField inp;
@@ -69,55 +65,35 @@ public class base extends JPanel {
 		l1.setFont(getFont().deriveFont(15.0f));
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 0;
+		c.gridwidth = 1;
 		c.gridy = 0;
 		this.add(l1, c);
 
-		manufacturer = new JComboBox<String>();
+		manufacturer = new JTextField();
+		manufacturer.setText("");
 		manufacturer.setFont(getFont().deriveFont(15.0f));
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 1;
+		c.gridwidth = 2;
 		c.gridy = 0;
 		this.add(manufacturer, c);
-
-		addManufacturer = new JButton("  +  ");
-		addManufacturer.setFont(getFont().deriveFont(15.0f));
-		addManufacturer.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-
-			}
-
-		});
-		c.fill = GridBagConstraints.HORIZONTAL;
-		c.gridx = 2;
-		c.gridy = 0;
-		this.add(addManufacturer, c);
 
 		JLabel l2 = new JLabel("Socket:");
 		l2.setFont(getFont().deriveFont(15.0f));
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 0;
+		c.gridwidth = 1;
 		c.gridy = 1;
 		this.add(l2, c);
 
-		socket = new JComboBox<String>();
+		socket = new JTextField();
+		socket.setText("");
 		socket.setFont(getFont().deriveFont(15.0f));
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 1;
+		c.gridwidth = 2;
 		c.gridy = 1;
 		this.add(socket, c);
-
-		addSocketType = new JButton("  +  ");
-		addSocketType.setFont(getFont().deriveFont(15.0f));
-		addSocketType.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-
-			}
-
-		});
-		c.fill = GridBagConstraints.HORIZONTAL;
-		c.gridx = 2;
-		c.gridy = 1;
-		this.add(addSocketType, c);
 
 		inp = new JTextField(30);
 		inp.setFont(getFont().deriveFont(15.0f));
@@ -132,12 +108,17 @@ public class base extends JPanel {
 		execute.setFont(getFont().deriveFont(15.0f));
 		execute.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				new core(inp.getText()).execute(inp.getText());
+				String mn = manufacturer.getText();
+				if (mn.equals("")) mn = null;
+				String ms = socket.getText();
+				if (ms.equals("")) ms = null;
+				new core(inp.getText(), ms, mn).execute(inp.getText(), ms, mn);
 				frame.dispose();
 			}
 		});
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 2;
+		c.gridwidth = 1;
 		c.gridy = 2;
 		this.add(execute, c);
 	}

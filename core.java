@@ -16,14 +16,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.image.BufferedImage;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Iterator;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -54,6 +47,8 @@ public class core extends JPanel {
 	 */
 
 	private static final long serialVersionUID = 1L;
+	
+	public static final int vert = 250;
 
 	public static float labelFont = 18.0f;
 
@@ -68,6 +63,9 @@ public class core extends JPanel {
 	public static JButton refresh_entry;
 
 	public static JButton manage_atts;
+
+	public static JButton change_manufacturer;
+	public static JButton change_socket;
 
 	public static JComboBox<String> cpu_combobox;
 
@@ -97,7 +95,7 @@ public class core extends JPanel {
 		LOW, MEDIUM, HIGH
 	};
 
-	public void execute(String path) {
+	public void execute(String path, String socket, String manufacturer) {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception ex) {
@@ -107,7 +105,7 @@ public class core extends JPanel {
 		// Frame.setIconImage(Toolkit.getDefaultToolkit().getImage(Start.class.getClass().getResource("/icon16.png")));
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setResizable(false);
-		core Content = new core(path);
+		core Content = new core(path, socket, manufacturer);
 		Content.setOpaque(true);
 		frame.setContentPane(Content);
 		frame.pack();
@@ -115,7 +113,9 @@ public class core extends JPanel {
 
 	}
 
-	public core(String path) {
+	public core(String path, String socket, String manufacturer) {
+		core.wantedMan = manufacturer;
+		core.wantedSoc = socket;
 		core.datafile = path;
 		this.setFocusable(false);
 		this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
@@ -129,7 +129,7 @@ public class core extends JPanel {
 			{
 				cpu_tableA = new JTable();
 				cpu_tableA.setModel(new DefaultTableModel(cpu_database, table_columns));
-				cpu_tableA.setPreferredScrollableViewportSize(new Dimension(500, 220));
+				cpu_tableA.setPreferredScrollableViewportSize(new Dimension(500, vert));
 				cpu_tableA.setFillsViewportHeight(true);
 				cpu_tableA.addMouseListener(new java.awt.event.MouseAdapter() {
 					public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -147,7 +147,7 @@ public class core extends JPanel {
 			{
 				cpu_tableB = new JTable();
 				cpu_tableB.setModel(new DefaultTableModel(cpu_database, table_columns));
-				cpu_tableB.setPreferredScrollableViewportSize(new Dimension(500, 220));
+				cpu_tableB.setPreferredScrollableViewportSize(new Dimension(500, vert));
 				cpu_tableB.setFillsViewportHeight(true);
 				cpu_tableB.addMouseListener(new java.awt.event.MouseAdapter() {
 					public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -164,7 +164,7 @@ public class core extends JPanel {
 			{
 				cpu_tableC = new JTable();
 				cpu_tableC.setModel(new DefaultTableModel(cpu_database, table_columns));
-				cpu_tableC.setPreferredScrollableViewportSize(new Dimension(500, 220));
+				cpu_tableC.setPreferredScrollableViewportSize(new Dimension(500, vert));
 				cpu_tableC.setFillsViewportHeight(true);
 				cpu_tableC.addMouseListener(new java.awt.event.MouseAdapter() {
 					public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -221,11 +221,11 @@ public class core extends JPanel {
 										int selected = cpu_tableA.getSelectedRow();
 										EntryProcessor eP = new EntryProcessor(datafile);
 										Object[] rt = cpu_database[selected];
-										String remove = rt[0] + "^";
-										remove += rt[1] + "^";
-										remove += rt[2] + "^";
-										remove += rt[3] + "^";
-										remove += rt[4] + "^";
+										String remove = rt[0] + eP.getDivider();
+										remove += rt[1] + eP.getDivider();
+										remove += rt[2] + eP.getDivider();
+										remove += rt[3] + eP.getDivider();
+										remove += rt[4] + eP.getDivider();
 										remove += rt[5];
 										eP.readEntries().removeEntry(remove, false);
 										eP.saveFile();
@@ -242,7 +242,7 @@ public class core extends JPanel {
 				button_panel.add(top_panel);
 
 				JPanel bot_panel2 = new JPanel();
-				bot_panel2.setLayout(new GridLayout(1, 1));
+				bot_panel2.setLayout(new GridLayout(3, 1));
 				bot_panel2.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Atributy"));
 				{
 					manage_atts = new JButton("Upravit");
@@ -254,7 +254,12 @@ public class core extends JPanel {
 								if (atts != "" && atts != null) {
 									int selected = cpu_tableA.getSelectedRow();
 									if (cpu_database[selected][2].toString() != atts) {
-										// TODO att manager
+										Object[] temp = cpu_database[selected];
+										EntryProcessor eP = new EntryProcessor(datafile);
+										String in = temp[0] + eP.getDivider() + temp[1] + eP.getDivider() + temp[2] + eP.getDivider() + temp[3] + eP.getDivider() + temp[4] + eP.getDivider() + temp[5];
+										String out = temp[0] + eP.getDivider() + temp[1] + eP.getDivider() + temp[2] + eP.getDivider() + temp[3] + eP.getDivider() + atts + eP.getDivider() + temp[5];
+										eP.readEntries().modifyEntry(in, false, out);
+										eP.saveFile();
 										fireUpdate(cpu_tableA, UPDATE.HIGH, datafile);
 									}
 								}
@@ -265,6 +270,58 @@ public class core extends JPanel {
 						}
 					});
 					bot_panel2.add(manage_atts);
+
+					change_manufacturer = new JButton("Vyrobce");
+					change_manufacturer.setFont(getFont().deriveFont(15.0f));
+					change_manufacturer.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent arg0) {
+							try {
+								String atts = showInputDialog(null, "Vyrobce: ", "Modifikovat vyrobce", cpu_database[cpu_tableA.getSelectedRow()][0].toString(), 30, false);
+								if (atts != "" && atts != null) {
+									int selected = cpu_tableA.getSelectedRow();
+									if (cpu_database[selected][0].toString() != atts) {
+										Object[] temp = cpu_database[selected];
+										EntryProcessor eP = new EntryProcessor(datafile);
+										String in = temp[0] + eP.getDivider() + temp[1] + eP.getDivider() + temp[2] + eP.getDivider() + temp[3] + eP.getDivider() + temp[4] + eP.getDivider() + temp[5];
+										String out = atts + eP.getDivider() + temp[1] + eP.getDivider() + temp[2] + eP.getDivider() + temp[3] + eP.getDivider() + temp[4] + eP.getDivider() + temp[5];
+										eP.readEntries().modifyEntry(in, false, out);
+										eP.saveFile();
+										fireUpdate(cpu_tableA, UPDATE.HIGH, datafile);
+									}
+								}
+
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						}
+					});
+					bot_panel2.add(change_manufacturer);
+
+					change_socket = new JButton("Socket");
+					change_socket.setFont(getFont().deriveFont(15.0f));
+					change_socket.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent arg0) {
+							try {
+								String atts = showInputDialog(null, "Socket: ", "Modifikovat socket", cpu_database[cpu_tableA.getSelectedRow()][1].toString(), 30, false);
+								if (atts != "" && atts != null) {
+									int selected = cpu_tableA.getSelectedRow();
+									if (cpu_database[selected][1].toString() != atts) {
+										Object[] temp = cpu_database[selected];
+										EntryProcessor eP = new EntryProcessor(datafile);
+										String in = temp[0] + eP.getDivider() + temp[1] + eP.getDivider() + temp[2] + eP.getDivider() + temp[3] + eP.getDivider() + temp[4] + eP.getDivider() + temp[5];
+										String out = temp[0] + eP.getDivider() + atts + eP.getDivider() + temp[2] + eP.getDivider() + temp[3] + eP.getDivider() + temp[4] + eP.getDivider() + temp[5];
+										eP.readEntries().modifyEntry(in, false, out);
+										eP.saveFile();
+										fireUpdate(cpu_tableA, UPDATE.HIGH, datafile);
+									}
+								}
+
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						}
+					});
+					bot_panel2.add(change_socket);
 				}
 				button_panel.add(bot_panel2);
 
@@ -281,7 +338,13 @@ public class core extends JPanel {
 								if (isAnyCellSelected(cpu_tableA)) {
 									int selected = cpu_tableA.getSelectedRow();
 									if (Integer.parseInt(cpu_database[selected][5].toString()) != cpu_combobox.getSelectedIndex()) {
-										// TODO combobox
+										Object[] e = cpu_database[selected];
+										EntryProcessor eP = new EntryProcessor(datafile).readEntries();
+										String oldStr = e[0] + eP.getDivider() + e[1] + eP.getDivider() + e[2] + eP.getDivider() + e[3] + eP.getDivider() + e[4] + eP.getDivider() + e[5];
+										String newStr = e[0] + eP.getDivider() + e[1] + eP.getDivider() + e[2] + eP.getDivider() + e[3] + eP.getDivider() + e[4] + eP.getDivider()
+												+ cpu_combobox.getSelectedIndex();
+										eP.modifyEntry(oldStr.toString(), false, newStr.toString());
+										eP.saveFile();
 										fireUpdate(cpu_tableA, UPDATE.HIGH, datafile);
 									}
 								}
@@ -315,7 +378,12 @@ public class core extends JPanel {
 								if (entry != "" && entry != null) {
 									int selected = cpu_tableA.getSelectedRow();
 									if (cpu_database[selected][1].toString() != entry) {
-										// TODO photo set
+										Object[] e = cpu_database[selected];
+										EntryProcessor eP = new EntryProcessor(datafile).readEntries();
+										String oldStr = e[0] + eP.getDivider() + e[1] + eP.getDivider() + e[2] + eP.getDivider() + e[3] + eP.getDivider() + e[4] + eP.getDivider() + e[5];
+										String newStr = e[0] + eP.getDivider() + e[1] + eP.getDivider() + e[2] + eP.getDivider() + entry + eP.getDivider() + e[4] + eP.getDivider() + e[5];
+										eP.modifyEntry(oldStr.toString(), false, newStr.toString());
+										eP.saveFile();
 										fireUpdate(cpu_tableA, UPDATE.HIGH, datafile);
 									}
 								}
@@ -383,35 +451,6 @@ public class core extends JPanel {
 		}
 	}
 
-	public static Object[][] readFromFile(String file) {
-		try {
-			EntryProcessor pc = new EntryProcessor(file).readEntries();
-			return pc.customFilter(wantedMan, wantedSoc);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return new String[][] {};
-	}
-
-	/*
-	 * if (new File(file).isFile()) {
-	 * // clearDupes(file);
-	 * String datas = refactor(file);
-	 * String[] block_data = datas.split("\\|");
-	 * for (int i = 0; i < block_data.length; i++) {
-	 * block_data[i] = block_data[i].substring(0, 1).toUpperCase() + block_data[i].substring(1);
-	 * }
-	 * Arrays.sort(block_data);
-	 * Object[][] raw_data = new Object[block_data.length][4];
-	 * for (int i = 0; i < block_data.length; i++) {
-	 * String[] cut_data = block_data[i].split("\\^");
-	 * for (int y = 0; y < 4; y++) {
-	 * raw_data[i][y] = cut_data[y];
-	 * }
-	 * }
-	 * return raw_data;
-	 */
-
 	public static boolean isAnyCellSelected(JTable table) {
 		for (int i = 0; i < table.getModel().getRowCount(); i++) {
 			for (int y = 0; y < table.getModel().getColumnCount(); y++) {
@@ -419,21 +458,6 @@ public class core extends JPanel {
 			}
 		}
 		return false;
-	}
-
-	/**
-	 * 
-	 * @param file Path to database file
-	 * @return Returns clean version of scanned file
-	 * @throws IOException
-	 */
-	public static String refactor(String file) throws IOException {
-		if (new File(file).exists()) {
-			String datas = new String(Files.readAllBytes(Paths.get(file)));
-			if (datas.contains("||")) datas = datas.replace("||", "|");
-			if (datas.charAt(0) == '|') datas = datas.substring(1);
-			return datas;
-		} else return null;
 	}
 
 	public void addNewEntry(EntryProcessor e) {
@@ -554,7 +578,12 @@ public class core extends JPanel {
 			dm.getDataVector().removeAllElements();
 			dm.fireTableDataChanged();
 
-			cpu_database = readFromFile(source);
+			try {
+				EntryProcessor pc = new EntryProcessor(datafile).readEntries();
+				cpu_database = pc.customFilter(wantedMan, wantedSoc);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 
 			table.setModel(new DefaultTableModel(cpu_database, table_columns) {
 				private static final long serialVersionUID = 1L;
@@ -590,7 +619,9 @@ public class core extends JPanel {
 				manage_atts.setEnabled(true);
 				remove_entry.setEnabled(true);
 				cpu_combobox.setEnabled(true);
-				ph_open.setEnabled((new File(cpu_database[selected][1].toString()).exists()) ? true : false);
+				change_socket.setEnabled(true);
+				change_manufacturer.setEnabled(true);
+				ph_open.setEnabled((new File(cpu_database[selected][3].toString()).exists()) ? true : false);
 				cpu_combobox.setSelectedIndex(Integer.parseInt(cpu_database[selected][5].toString()));
 			} else {
 				ph_set.setEnabled(false);
@@ -598,28 +629,9 @@ public class core extends JPanel {
 				remove_entry.setEnabled(false);
 				ph_open.setEnabled(false);
 				cpu_combobox.setEnabled(false);
+				change_socket.setEnabled(false);
+				change_manufacturer.setEnabled(false);
 			}
-		}
-	}
-
-	public static void clearDupes(String file) throws IOException {
-		if (new File(file).exists()) {
-			String lin_data = refactor(file);
-			String[] raw_data = lin_data.split("\\|");
-			HashSet<String> hset = new HashSet<>();
-			for (int i = 0; i < raw_data.length; i++) {
-				hset.add(raw_data[i]);
-			}
-			String[] clr_data = new String[hset.size()];
-			int i = 0;
-			for (Iterator<String> iter = hset.iterator(); iter.hasNext();) {
-				clr_data[i++] = iter.next();
-			}
-			BufferedWriter fix = new BufferedWriter(new FileWriter(file));
-			for (String s : clr_data) {
-				fix.write(s + "|");
-			}
-			fix.close();
 		}
 	}
 

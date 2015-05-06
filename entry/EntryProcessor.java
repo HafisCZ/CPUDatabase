@@ -69,7 +69,7 @@ public class EntryProcessor {
 	}
 
 	public Object[][] manufacturerFilter(String prefix, Object[][] filterArray) {
-		if (prefix == null) return this.entries;
+		if (prefix == null) return filterArray;
 		ArrayList<Object[]> prefixList = new ArrayList<Object[]>();
 		for (Object[] o : filterArray) {
 			if (o[0].equals(prefix)) prefixList.add(o);
@@ -80,7 +80,7 @@ public class EntryProcessor {
 	}
 
 	public Object[][] socketFilter(String prefix, Object[][] filterArray) {
-		if (prefix == null) return this.entries;
+		if (prefix == null) return filterArray;
 		ArrayList<Object[]> prefixList = new ArrayList<Object[]>();
 		for (Object[] o : filterArray) {
 			if (o[1].equals(prefix)) prefixList.add(o);
