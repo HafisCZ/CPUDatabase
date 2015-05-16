@@ -17,6 +17,8 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -33,10 +35,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.RowSorter;
+import javax.swing.SortOrder;
 import javax.swing.UIManager;
 import javax.swing.border.EtchedBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import entry.EntryProcessor;
 
@@ -47,7 +53,7 @@ public class core extends JPanel {
 	 */
 
 	private static final long serialVersionUID = 1L;
-	
+
 	public static final int vert = 250;
 
 	public static float labelFont = 18.0f;
@@ -56,8 +62,6 @@ public class core extends JPanel {
 	public static JButton search_go;
 
 	public static JTable cpu_tableA;
-	public static JTable cpu_tableB;
-	public static JTable cpu_tableC;
 	public static JButton add_entry;
 	public static JButton remove_entry;
 	public static JButton refresh_entry;
@@ -75,8 +79,6 @@ public class core extends JPanel {
 	public static JButton ph_set;
 
 	public static JPanel table_panelA;
-	public static JPanel table_panelB;
-	public static JPanel table_panelC;
 	public static JPanel button_panel;
 	public static JPanel main_panel;
 	public static JPanel search_panel;
@@ -141,44 +143,8 @@ public class core extends JPanel {
 				table_panelA.add(slr);
 			}
 
-			table_panelB = new JPanel();
-			table_panelB.setLayout(new FlowLayout());
-			table_panelB.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Seznam"));
-			{
-				cpu_tableB = new JTable();
-				cpu_tableB.setModel(new DefaultTableModel(cpu_database, table_columns));
-				cpu_tableB.setPreferredScrollableViewportSize(new Dimension(500, vert));
-				cpu_tableB.setFillsViewportHeight(true);
-				cpu_tableB.addMouseListener(new java.awt.event.MouseAdapter() {
-					public void mouseClicked(java.awt.event.MouseEvent e) {
-						fireUpdate(cpu_tableB, UPDATE.LOW, datafile);
-					}
-				});
-				JScrollPane slr = new JScrollPane(cpu_tableB, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-				table_panelB.add(slr);
-			}
-
-			table_panelC = new JPanel();
-			table_panelC.setLayout(new FlowLayout());
-			table_panelC.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Seznam"));
-			{
-				cpu_tableC = new JTable();
-				cpu_tableC.setModel(new DefaultTableModel(cpu_database, table_columns));
-				cpu_tableC.setPreferredScrollableViewportSize(new Dimension(500, vert));
-				cpu_tableC.setFillsViewportHeight(true);
-				cpu_tableC.addMouseListener(new java.awt.event.MouseAdapter() {
-					public void mouseClicked(java.awt.event.MouseEvent e) {
-						fireUpdate(cpu_tableC, UPDATE.LOW, datafile);
-					}
-				});
-				JScrollPane slr = new JScrollPane(cpu_tableC, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-				table_panelC.add(slr);
-			}
-
 			cpu_owner_sort = new JTabbedPane();
 			cpu_owner_sort.addTab("Všechny", table_panelA);
-			cpu_owner_sort.addTab(cpu_status[1], table_panelB);
-			cpu_owner_sort.addTab(cpu_status[0], table_panelC);
 			main_panel.add(cpu_owner_sort);
 
 			button_panel = new JPanel();
@@ -218,7 +184,7 @@ public class core extends JPanel {
 							try {
 								if (isAnyCellSelected(cpu_tableA)) {
 									if (JOptionPane.showConfirmDialog(null, "Opravdu chcete odebrat tento prvek ?", "Odebrat prvek", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.OK_OPTION) {
-										int selected = cpu_tableA.getSelectedRow();
+										int selected = cpu_tableA.convertRowIndexToModel(cpu_tableA.getSelectedRow());
 										EntryProcessor eP = new EntryProcessor(datafile);
 										Object[] rt = cpu_database[selected];
 										String remove = rt[0] + eP.getDivider();
@@ -252,7 +218,7 @@ public class core extends JPanel {
 							try {
 								String atts = showInputDialog(null, "Atributy: ", "Modifikovat atributy", cpu_database[cpu_tableA.getSelectedRow()][4].toString(), 30, false);
 								if (atts != "" && atts != null) {
-									int selected = cpu_tableA.getSelectedRow();
+									int selected = cpu_tableA.convertRowIndexToModel(cpu_tableA.getSelectedRow());
 									if (cpu_database[selected][2].toString() != atts) {
 										Object[] temp = cpu_database[selected];
 										EntryProcessor eP = new EntryProcessor(datafile);
@@ -278,7 +244,7 @@ public class core extends JPanel {
 							try {
 								String atts = showInputDialog(null, "Vyrobce: ", "Modifikovat vyrobce", cpu_database[cpu_tableA.getSelectedRow()][0].toString(), 30, false);
 								if (atts != "" && atts != null) {
-									int selected = cpu_tableA.getSelectedRow();
+									int selected = cpu_tableA.convertRowIndexToModel(cpu_tableA.getSelectedRow());
 									if (cpu_database[selected][0].toString() != atts) {
 										Object[] temp = cpu_database[selected];
 										EntryProcessor eP = new EntryProcessor(datafile);
@@ -304,7 +270,7 @@ public class core extends JPanel {
 							try {
 								String atts = showInputDialog(null, "Socket: ", "Modifikovat socket", cpu_database[cpu_tableA.getSelectedRow()][1].toString(), 30, false);
 								if (atts != "" && atts != null) {
-									int selected = cpu_tableA.getSelectedRow();
+									int selected = cpu_tableA.convertRowIndexToModel(cpu_tableA.getSelectedRow());
 									if (cpu_database[selected][1].toString() != atts) {
 										Object[] temp = cpu_database[selected];
 										EntryProcessor eP = new EntryProcessor(datafile);
@@ -336,7 +302,7 @@ public class core extends JPanel {
 						public void itemStateChanged(ItemEvent event) {
 							try {
 								if (isAnyCellSelected(cpu_tableA)) {
-									int selected = cpu_tableA.getSelectedRow();
+									int selected = cpu_tableA.convertRowIndexToModel(cpu_tableA.getSelectedRow());
 									if (Integer.parseInt(cpu_database[selected][5].toString()) != cpu_combobox.getSelectedIndex()) {
 										Object[] e = cpu_database[selected];
 										EntryProcessor eP = new EntryProcessor(datafile).readEntries();
@@ -376,7 +342,7 @@ public class core extends JPanel {
 							try {
 								String entry = showInputDialog(null, "Cesta: ", "Pøidat fotografii", cpu_database[cpu_tableA.getSelectedRow()][3].toString(), 20, true);
 								if (entry != "" && entry != null) {
-									int selected = cpu_tableA.getSelectedRow();
+									int selected = cpu_tableA.convertRowIndexToModel(cpu_tableA.getSelectedRow());
 									if (cpu_database[selected][1].toString() != entry) {
 										Object[] e = cpu_database[selected];
 										EntryProcessor eP = new EntryProcessor(datafile).readEntries();
@@ -570,7 +536,7 @@ public class core extends JPanel {
 	 * @param level Level of update from UPDATE enum
 	 * @param source Path to database file
 	 */
-	public void fireUpdate(JTable table, UPDATE level, String source) {
+	public void fireUpdate(final JTable table, UPDATE level, String source) {
 
 		if (level == UPDATE.MEDIUM || level == UPDATE.HIGH) {
 
@@ -585,15 +551,28 @@ public class core extends JPanel {
 				e.printStackTrace();
 			}
 
-			table.setModel(new DefaultTableModel(cpu_database, table_columns) {
+			TableModel model = new DefaultTableModel(cpu_database, table_columns) {
 				private static final long serialVersionUID = 1L;
 
 				@Override
 				public boolean isCellEditable(int row, int column) {
 					return false;
 				}
-			});
+			};
+
+			table.setModel(model);
 			table.getColumnModel().getColumn(0).setPreferredWidth(80);
+
+			TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel());
+			table.setRowSorter(sorter);
+			List<RowSorter.SortKey> sortKeys = new ArrayList<>();
+
+			int columnIndexToSort = 5;
+			sortKeys.add(new RowSorter.SortKey(columnIndexToSort, SortOrder.DESCENDING));
+
+			sorter.setSortKeys(sortKeys);
+			sorter.sort();
+
 			table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
 				private static final long serialVersionUID = 1L;
 
@@ -614,7 +593,7 @@ public class core extends JPanel {
 
 		if (level == UPDATE.LOW || level == UPDATE.HIGH) {
 			if (isAnyCellSelected(table)) {
-				int selected = table.getSelectedRow();
+				int selected = table.convertRowIndexToModel(table.getSelectedRow());
 				ph_set.setEnabled(true);
 				manage_atts.setEnabled(true);
 				remove_entry.setEnabled(true);
@@ -634,5 +613,4 @@ public class core extends JPanel {
 			}
 		}
 	}
-
 }

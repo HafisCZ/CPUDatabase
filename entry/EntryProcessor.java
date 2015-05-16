@@ -23,12 +23,17 @@ public class EntryProcessor {
 
 	public EntryProcessor(String path) throws IOException {
 		this.readable = new File(path);
-		if (!this.readable.exists()) readable.createNewFile();
+		this.readable.createNewFile();
 	}
 
 	public EntryProcessor readEntries() throws IOException {
 		if (this.readable.isFile()) {
-			rawText = clearRaw(new String(Files.readAllBytes(Paths.get(this.readable.getCanonicalPath()))));
+			String uncleared = new String(Files.readAllBytes(Paths.get(this.readable.getCanonicalPath())));
+			if (uncleared.length() <= 0) {
+				this.entries = clean();
+				return this;
+			}
+			rawText = clearRaw(uncleared);
 			String[] temp2 = rawText.split("\\|");
 			for (int i = 0; i >= temp2.length; i++) {
 				temp2[i] = temp2[i].substring(0, 1).toUpperCase() + temp2[i].substring(1);
@@ -69,7 +74,7 @@ public class EntryProcessor {
 	}
 
 	public Object[][] manufacturerFilter(String prefix, Object[][] filterArray) {
-		if (prefix == null) return filterArray;
+		if (prefix == null || filterArray.length == 0) return filterArray;
 		ArrayList<Object[]> prefixList = new ArrayList<Object[]>();
 		for (Object[] o : filterArray) {
 			if (o[0].equals(prefix)) prefixList.add(o);
@@ -80,7 +85,7 @@ public class EntryProcessor {
 	}
 
 	public Object[][] socketFilter(String prefix, Object[][] filterArray) {
-		if (prefix == null) return filterArray;
+		if (prefix == null || filterArray.length == 0) return filterArray;
 		ArrayList<Object[]> prefixList = new ArrayList<Object[]>();
 		for (Object[] o : filterArray) {
 			if (o[1].equals(prefix)) prefixList.add(o);
