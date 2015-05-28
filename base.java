@@ -21,7 +21,11 @@ public class base extends JPanel {
 	public static JTextField socket;
 
 	public static JButton execute;
+	public static JButton seller;		
+
 	public static JTextField inp;
+	public static JTextField inp2;	
+
 	public static JPanel panel2;
 	public static JPanel panel1;
 
@@ -29,6 +33,7 @@ public class base extends JPanel {
 	public static JPanel sub_panel2;
 
 	public static String path = "data.db";
+	public static String path2 = "sell.db";
 
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(new Runnable() {
@@ -121,5 +126,33 @@ public class base extends JPanel {
 		c.gridwidth = 1;
 		c.gridy = 2;
 		this.add(execute, c);
+
+		inp2 = new JTextField(30);
+		inp2.setFont(getFont().deriveFont(15.0f));
+		inp2.setText(path2);
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 0;
+		c.gridwidth = 2;
+		c.gridy = 3;
+		this.add(inp2, c);
+
+		seller = new JButton("Prodej");
+		seller.setFont(getFont().deriveFont(15.0f));
+		seller.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent arg0) {
+				String mn = manufacturer.getText();
+				if (mn.equals("")) mn = null;
+				String ms = socket.getText();
+				if (ms.equals("")) ms = null;
+				new sellCore(inp2.getText(), ms, mn).execute(inp2.getText(), ms, mn);				
+
+				frame.dispose();
+			}
+		});
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 2;
+		c.gridwidth = 1;
+		c.gridy = 3;
+		this.add(seller, c);
 	}
 }
